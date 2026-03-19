@@ -41,28 +41,19 @@ O **MedAssist+** é uma aplicação full-stack que permite:
 
 ---
 
-## 🧱 Estrutura do projeto
+## 📁 Estrutura do projeto
 
-MedAssist/
-├── backend/
-│   ├── src/
-│   │   ├── db.js
-│   │   ├── server.js
-│   │   ├── routes/
-│   │   │   ├── pacientes.js
-│   │   │   └── medicamentos.js
-│   ├── .env
-│   └── package.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   ├── components/
-│   │   ├── services/
-│   │   └── App.tsx
-│   └── package.json
-
----
+```bash
+backend/
+ ├── src/
+ │   ├── db.js
+ │   ├── server.js
+ │   ├── routes/
+ │   │    ├── pacientes.js
+ │   │    └── medicamentos.js
+ ├── .env
+ └── package.json
+```
 
 ## ⚙️ Instalação e execução
 
