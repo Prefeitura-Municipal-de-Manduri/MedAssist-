@@ -11,7 +11,7 @@ export default function AppHeader() {
             <Heart className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg font-bold leading-tight text-foreground">Assistência Social</h1>
+            <h1 className="text-lg font-bold leading-tight text-foreground">MedAssist</h1>
             <p className="text-xs text-muted-foreground">Gestão de Pacientes e Medicamentos</p>
           </div>
         </Link>
