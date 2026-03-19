@@ -160,11 +160,4 @@ http://localhost:8080
 
 ## 📄 Licença
 
-ISC
-"""
-
-file_path = "/mnt/data/README_MedAssist.md"
-with open(file_path, "w", encoding="utf-8") as f:
-    f.write(content)
-
-file_path
+![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
