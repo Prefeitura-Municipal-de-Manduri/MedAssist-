@@ -3,9 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import type { Tables } from '@/integrations/supabase/types';
 
-type Paciente = Tables<'pacientes'>;
+type Paciente = {
+  id?: string;
+  nome: string;
+  contato?: string;
+  data_nascimento?: string;
+};
 
 interface PacienteFormDialogProps {
   open: boolean;

@@ -1,21 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
-export type Paciente = Tables<'pacientes'>;
+export type Paciente = {
+  id: string;
+  nome: string;
+  contato?: string;
+  data_nascimento?: string;
+};
+
+const API_URL = "http://localhost:3000";
 
 export function usePacientes(busca?: string) {
   return useQuery<Paciente[]>({
     queryKey: ['pacientes', busca],
     queryFn: async () => {
-      let query = supabase.from('pacientes').select('*').order('nome');
-      if (busca && busca.trim()) {
-        query = query.ilike('nome', `%${busca.trim()}%`);
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
+      const url = busca && busca.trim()
+        ? `${API_URL}/pacientes?busca=${encodeURIComponent(busca)}`
+        : `${API_URL}/pacientes`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Erro ao buscar pacientes");
+      return await res.json();
     },
   });
 }
@@ -24,9 +29,9 @@ export function usePaciente(id: string) {
   return useQuery<Paciente>({
     queryKey: ['paciente', id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('pacientes').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data;
+      const res = await fetch(`${API_URL}/pacientes/${id}`);
+      if (!res.ok) throw new Error("Erro ao buscar paciente");
+      return await res.json();
     },
     enabled: !!id,
   });
@@ -34,37 +39,66 @@ export function usePaciente(id: string) {
 
 export function useCriarPaciente() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async (form: TablesInsert<'pacientes'>) => {
-      const { data, error } = await supabase.from('pacientes').insert(form).select().single();
-      if (error) throw error;
-      return data;
+    mutationFn: async (form: any) => {
+      const res = await fetch(`${API_URL}/pacientes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) throw new Error("Erro ao criar paciente");
+      return await res.json();
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pacientes'] }); toast.success('Paciente cadastrado com sucesso!'); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pacientes'] });
+      toast.success('Paciente cadastrado com sucesso!');
+    },
     onError: () => toast.error('Erro ao cadastrar paciente.'),
   });
 }
 
 export function useEditarPaciente() {
   const qc = useQueryClient();
+
   return useMutation({
-    mutationFn: async ({ id, ...form }: TablesUpdate<'pacientes'> & { id: string }) => {
-      const { error } = await supabase.from('pacientes').update(form).eq('id', id);
-      if (error) throw error;
+    mutationFn: async ({ id, ...form }: any) => {
+      const res = await fetch(`${API_URL}/pacientes/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) throw new Error("Erro ao atualizar paciente");
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pacientes'] }); toast.success('Paciente atualizado!'); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pacientes'] });
+      toast.success('Paciente atualizado!');
+    },
     onError: () => toast.error('Erro ao atualizar paciente.'),
   });
 }
 
 export function useExcluirPaciente() {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('pacientes').delete().eq('id', id);
-      if (error) throw error;
+      const res = await fetch(`${API_URL}/pacientes/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Erro ao excluir paciente");
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pacientes'] }); toast.success('Paciente excluído!'); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pacientes'] });
+      toast.success('Paciente excluído!');
+    },
     onError: () => toast.error('Erro ao excluir paciente.'),
   });
 }
