@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePaciente } from '@/hooks/usePacientes';
 import { useMedicamentos, useCriarMedicamento, useEditarMedicamento, useExcluirMedicamento, useAdicionarRetirada } from '@/hooks/useMedicamentos';
@@ -6,6 +6,7 @@ import type { Tables } from '@/integrations/supabase/types';
 import AppHeader from '@/components/AppHeader';
 import MedicamentoFormDialog from '@/components/MedicamentoFormDialog';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Plus, Pencil, Trash2, Pill, CalendarPlus, User, Phone, Calendar, AlertTriangle } from 'lucide-react';
@@ -26,10 +27,19 @@ function formatDate(d: string | null): string {
   return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
 }
 
+type OrdemListagem = 'alfabetica' | 'alfabetica_inversa' | 'ultima_interação';
+
+const LABEL_ORDENACAO: Record<OrdemListagem, string> = {
+  alfabetica: 'Alfabética (A-Z)',
+  alfabetica_inversa: 'Alfabética (Z-A)',
+  ultima_interação: 'Última interação',
+};
+
 export default function PacienteDetalhesPage() {
   const { id } = useParams<{ id: string }>();
   const { data: paciente, isLoading: loadingPaciente } = usePaciente(id!);
   const { data: medicamentos, isLoading: loadingMeds } = useMedicamentos(id!);
+  const [ordemListagem, setOrdemListagem] = useState<OrdemListagem>('alfabetica');
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editando, setEditando] = useState<Medicamento | null>(null);
@@ -39,6 +49,21 @@ export default function PacienteDetalhesPage() {
   const editar = useEditarMedicamento();
   const excluir = useExcluirMedicamento();
   const retirada = useAdicionarRetirada();
+
+  const medicamentosOrdenados = useMemo(() => {
+    const lista = [...(medicamentos ?? [])];
+
+    if (ordemListagem === 'alfabetica') {
+      return lista.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    }
+
+    if (ordemListagem === 'alfabetica_inversa') {
+      return lista.sort((a, b) => b.nome.localeCompare(a.nome, 'pt-BR'));
+    }
+
+    return lista.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+  }, [medicamentos, ordemListagem]);
+
 
   const handleSubmit = (data: { nome: string; data_inicio: string; data_validade?: string; vezes_tomado?: number }) => {
     if (editando) {
@@ -82,6 +107,8 @@ export default function PacienteDetalhesPage() {
     );
   }
 
+
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -116,9 +143,21 @@ export default function PacienteDetalhesPage() {
               {medicamentos ? `${medicamentos.length} medicamento(s)` : 'Carregando...'}
             </p>
           </div>
-          <Button onClick={() => { setEditando(null); setDialogOpen(true); }} className="gap-2">
-            <Plus className="h-4 w-4" /> Adicionar
-          </Button>
+          <div className='flex gap-5'>
+            <Button onClick={() => { setEditando(null); setDialogOpen(true); }} className="gap-2">
+              <Plus className="h-4 w-4" /> Adicionar
+            </Button>
+            <Select value={ordemListagem} onValueChange={value => setOrdemListagem(value as OrdemListagem)}>
+              <SelectTrigger className="sm:w-[240px]">
+                <SelectValue placeholder="Ordenar por" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="alfabetica">{LABEL_ORDENACAO.alfabetica}</SelectItem>
+                <SelectItem value="alfabetica_inversa">{LABEL_ORDENACAO.alfabetica_inversa}</SelectItem>
+                <SelectItem value="ultima_interação">{LABEL_ORDENACAO.ultima_interação}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {loadingMeds ? (
@@ -134,7 +173,7 @@ export default function PacienteDetalhesPage() {
           </Card>
         ) : (
           <div className="grid gap-3">
-            {medicamentos?.map(med => {
+            {medicamentosOrdenados?.map(med => {
               const vencido = estaVencido(med.data_validade);
               return (
                 <Card key={med.id} className={`transition-shadow hover:shadow-md ${vencido ? 'border-destructive/30' : ''}`}>
