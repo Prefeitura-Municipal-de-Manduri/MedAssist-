@@ -3,62 +3,73 @@ import { pool } from '../db.js';
 
 const router = express.Router();
 
-// GET por paciente
+// GET por paciente - Busca as prescrições ligadas ao ID do paciente
 router.get('/:pacienteId', async (req, res) => {
-  const result = await pool.query(
-    'SELECT * FROM medicamentos WHERE paciente_id=$1 ORDER BY nome',
-    [req.params.pacienteId]
-  );
-
-  res.json(result.rows);
+  try {
+    const result = await pool.query(
+      `SELECT 
+        id, 
+        paciente_id, 
+        medicamento_nome AS nome, 
+        dosagem AS dose,
+        data_prescricao AS data_inicio
+       FROM public.prescricoes 
+       WHERE paciente_id = $1 
+       ORDER BY medicamento_nome`,
+      [req.params.pacienteId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao buscar medicamentos" });
+  }
 });
 
-// POST
+// POST - Criar nova prescrição
 router.post('/', async (req, res) => {
-  const { paciente_id, nome, data_inicio, data_validade, datas_retirada, vezes_tomado, dose } = req.body;
+  const { paciente_id, nome, dose } = req.body;
 
-  const result = await pool.query(
-    `INSERT INTO medicamentos 
-    (paciente_id, nome, data_inicio, data_validade, datas_retirada, vezes_tomado, dose)
-    VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [paciente_id, nome, data_inicio, data_validade, datas_retirada, vezes_tomado, dose || null]
-  );
-
-  res.json(result.rows[0]);
+  try {
+    const result = await pool.query(
+      `INSERT INTO public.prescricoes (paciente_id, medicamento_nome, dosagem)
+       VALUES ($1, $2, $3) 
+       RETURNING id, paciente_id, medicamento_nome AS nome, dosagem AS dose`,
+      [paciente_id, nome, dose]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao salvar medicamento" });
+  }
 });
 
-// PUT
+// PUT - Editar medicamento existente
 router.put('/:id', async (req, res) => {
-  const { nome, data_inicio, data_validade, vezes_tomado, dose } = req.body;
+  const { nome, dose } = req.body;
 
-  await pool.query(
-    `UPDATE medicamentos 
-     SET nome=$1, data_inicio=$2, data_validade=$3, vezes_tomado=$4, dose=$5
-     WHERE id=$6`,
-    [nome, data_inicio, data_validade, vezes_tomado, dose || null, req.params.id]
-  );
-
-  res.sendStatus(200);
+  try {
+    await pool.query(
+      `UPDATE public.prescricoes 
+       SET medicamento_nome = $1, dosagem = $2
+       WHERE id = $3`,
+      [nome, dose, req.params.id]
+    );
+    res.sendStatus(200);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao atualizar medicamento" });
+  }
 });
 
-// DELETE
+// DELETE - Remover medicamento
 router.delete('/:id', async (req, res) => {
-  await pool.query('DELETE FROM medicamentos WHERE id=$1', [req.params.id]);
-  res.sendStatus(200);
-});
-
-// REGISTRAR RETIRADA
-router.put('/:id/retirada', async (req, res) => {
-  const { novaData, datasAtuais, vezesAtual } = req.body;
-
-  await pool.query(
-    `UPDATE medicamentos 
-     SET datas_retirada=$1, vezes_tomado=$2 
-     WHERE id=$3`,
-    [[...datasAtuais, novaData], vezesAtual + 1, req.params.id]
-  );
-
-  res.sendStatus(200);
+  try {
+    await pool.query('DELETE FROM public.prescricoes WHERE id = $1', [req.params.id]);
+    res.sendStatus(200);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao deletar medicamento" });
+  }
 });
 
 export default router;
