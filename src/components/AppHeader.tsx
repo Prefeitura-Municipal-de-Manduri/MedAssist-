@@ -1,31 +1,56 @@
-import { Heart } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import logo from '../imgs/logo.png';
 
 export default function AppHeader() {
   const location = useLocation();
+
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
-      <div className="container mx-auto flex items-center justify-between px-4 py-3">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Heart className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold leading-tight text-foreground">MedAssist</h1>
-            <p className="text-xs text-muted-foreground">Gestão de Pacientes e Medicamentos</p>
-          </div>
-        </Link>
-        <nav className="flex gap-1">
+    <header className="w-full border-b bg-white">
+
+      {/* LOGO */}
+      <div className="w-full flex justify-center items-center py-6">
+        <img
+          src={logo}
+          alt="MedAssist Logo"
+          className="h-28 object-contain"
+        />
+      </div>
+
+      {/* MENU + AÇÕES */}
+      <div className="flex justify-between items-center px-6 pb-4">
+
+        {/* MENU */}
+        <div className="flex gap-4">
           <Link
             to="/"
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-              location.pathname === '/' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            className={`px-4 py-2 rounded-lg transition ${
+              location.pathname === '/'
+                ? 'bg-blue-500 text-white'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            Início
+          </Link>
+
+          <Link
+            to="/pacientes"
+            className={`px-4 py-2 rounded-lg transition ${
+              location.pathname === '/pacientes'
+                ? 'bg-blue-500 text-white'
+                : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
             Pacientes
           </Link>
-        </nav>
+        </div>
+
+        {/* BOTÃO ADICIONAR */}
+        <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition">
+          + Novo Paciente
+        </button>
+
       </div>
+
     </header>
   );
 }
