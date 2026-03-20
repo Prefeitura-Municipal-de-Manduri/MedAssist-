@@ -144,6 +144,12 @@ http://localhost:8080
         <sub><b>João Diogo</b></sub>
       </a>
     </td>
+    <td align="center">
+      <a href="https://github.com/BrunoAkT">
+        <img src="https://github.com/BrunoAkT.png" width="100" /><br>
+        <sub><b>Bruno Aoki Tenorio</b></sub>
+      </a>
+    </td>
   </tr>
 </table>
 
