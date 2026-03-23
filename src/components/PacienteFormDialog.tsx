@@ -36,6 +36,21 @@ export default function PacienteFormDialog({ open, onClose, onSubmit, paciente, 
     });
   };
 
+  const FormatPhone = (value: string) => {
+    value = value.replace(/\D/g, "");
+    value = value.replace(/^(\d{2})(\d)/g, "($1) $2");
+
+    // se tiver 11 dígitos → celular
+    if (value.replace(/\D/g, "").length > 10) {
+      value = value.replace(/(\d{5})(\d)/, "$1-$2");
+    } else {
+      //(fixo)
+      value = value.replace(/(\d{4})(\d)/, "$1-$2");
+    }
+
+    return value.slice(0, 15);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -49,7 +64,7 @@ export default function PacienteFormDialog({ open, onClose, onSubmit, paciente, 
           </div>
           <div>
             <Label htmlFor="contato">Contato</Label>
-            <Input id="contato" placeholder="(00) 00000-0000" value={contato} onChange={e => setContato(e.target.value)} />
+            <Input id="contato" placeholder="(00) 00000-0000" value={contato} onChange={e => setContato(FormatPhone(e.target.value))} />
           </div>
           <div>
             <Label htmlFor="data_nascimento">Data de Nascimento</Label>
