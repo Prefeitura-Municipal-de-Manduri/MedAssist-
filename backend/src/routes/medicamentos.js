@@ -8,17 +8,21 @@ router.get('/:pacienteId', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT 
-        id, 
-        paciente_id, 
-        medicamento_nome AS nome, 
-        dosagem AS dose,
-        data_prescricao AS data_inicio,
-        vezes_tomado
-       FROM public.prescricoes 
-       WHERE paciente_id = $1 
-       ORDER BY medicamento_nome`,
+        p.id, 
+        p.paciente_id, 
+        p.medicamento_nome AS nome, 
+        p.dosagem AS dose,
+        p.data_prescricao AS data_inicio,
+        COUNT(r.id) AS retiradas,
+        ARRAY_AGG(r.data_retirada) AS datas_retirada
+       FROM public.prescricoes p
+       LEFT JOIN retiradas r ON r.prescricao_id = p.id
+       WHERE p.paciente_id = $1 
+       GROUP BY p.id
+       ORDER BY p.medicamento_nome`,
       [req.params.pacienteId]
     );
+
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -69,17 +73,14 @@ router.put('/:id/retirada', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query(
-      `UPDATE public.prescricoes
-       SET 
-         vezes_tomado = COALESCE(vezes_tomado, 0) + 1,
-         data_prescricao = CURRENT_TIMESTAMP
-       WHERE id = $1
-       RETURNING *`,
+    // registra retirada
+    await pool.query(
+      `INSERT INTO retiradas (prescricao_id)
+       VALUES ($1)`,
       [id]
     );
 
-    res.json(result.rows[0]); // retorna atualizado
+    res.sendStatus(200);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erro ao registrar retirada" });
