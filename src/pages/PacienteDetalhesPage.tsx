@@ -19,20 +19,31 @@ import {
 // --- FUNÇÕES AUXILIARES ---
 function estaVencido(dataValidade: string | null | undefined): boolean {
   if (!dataValidade) return false;
-  return new Date(dataValidade + 'T23:59:59') < new Date();
+  const data = new Date(dataValidade);
+  if (isNaN(data.getTime())) return false;
+
+  return data < new Date();
 }
 
 function consultaSocialVencida(dataProxima: string | null | undefined): boolean {
-  if (!dataProxima) return true; 
+  if (!dataProxima) return true;
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
-  return new Date(dataProxima + 'T00:00:00') <= hoje;
+  const data = new Date(dataProxima);
+  if (isNaN(data.getTime())) return true;
+  return data <= hoje;
 }
 
 function formatDate(d: string | null | undefined): string {
   if (!d) return '—';
-  return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
+
+  const date = new Date(d);
+
+  if (isNaN(date.getTime())) return '—';
+
+  return date.toLocaleDateString('pt-BR');
 }
+
 
 type OrdemListagem = 'alfabetica' | 'alfabetica_inversa';
 
@@ -85,25 +96,39 @@ export default function PacienteDetalhesPage() {
   const handleSubmit = (data: { nome: string; dose: string; data_inicio: string; data_validade?: string; vezes_tomado?: number }) => {
     if (editando) {
       editar.mutate({ id: editando.id, paciente_id: pacienteId, ...data }, { 
-        onSuccess: () => { setDialogOpen(false); setEditando(null); } 
+        onSuccess: () =>{
+                queryClient.invalidateQueries({ queryKey: ['medicamentos', id] });
+                setDialogOpen(false);
+                setEditando(null);
+              }
       });
     } else {
       criar.mutate({ paciente_id: pacienteId, ...data }, { 
-        onSuccess: () => setDialogOpen(false) 
+        onSuccess: () =>{
+              queryClient.invalidateQueries({ queryKey: ['medicamentos', id] });
+              setDialogOpen(false);
+            }
       });
     }
   };
 
+  
   const handleRetirada = (med: Medicamento) => {
-    const hoje = new Date().toISOString().split('T')[0];
-    retirada.mutate({
+  retirada.mutate(
+    {
       id: med.id,
       paciente_id: pacienteId,
-      novaData: hoje,
-      datasAtuais: med.datas_retirada ?? [],
-      vezesAtual: med.vezes_tomado ?? 0,
-    });
-  };
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['medicamentos', id] });
+      },
+      onError: () => {
+        alert("Erro ao registrar retirada");
+      }
+    }
+  );
+};
 
   if (loadingPaciente) return <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   if (!paciente) return <div className="text-center py-12"><p>Paciente não encontrado.</p></div>;
@@ -177,7 +202,16 @@ export default function PacienteDetalhesPage() {
                       <div><span className="text-xs text-muted-foreground">Início</span><p>{formatDate(med.data_inicio)}</p></div>
                       <div><span className="text-xs text-muted-foreground">Validade</span><p>{formatDate(med.data_validade)}</p></div>
                       <div><span className="text-xs text-muted-foreground">Vezes</span><p>{med.vezes_tomado}</p></div>
-                      <div><span className="text-xs text-muted-foreground">Retiradas</span><p>{med.datas_retirada?.length ?? 0}</p></div>
+                      <div><span className="text-xs text-muted-foreground">Retiradas</span><p>{med.retiradas ?? 0}</p></div>
+                      {med.datas_retirada && med.datas_retirada[0] && (
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        <p className="font-semibold">Datas de retirada:</p>
+
+                        {med.datas_retirada.map((data, i) => (
+                          <p key={i}>• {formatDate(data)}</p>
+                        ))}
+                      </div>
+)}
                     </div>
 
                     <div className="mt-4 flex gap-2">
@@ -207,9 +241,27 @@ export default function PacienteDetalhesPage() {
             <AlertDialogHeader><AlertDialogTitle>Excluir?</AlertDialogTitle></AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={() => { if (excluindo) excluir.mutate({ id: excluindo, paciente_id: pacienteId }); setExcluindo(null); }}>
-                Excluir
-              </AlertDialogAction>
+
+              <AlertDialogAction
+                    onClick={() => {
+                      if (!excluindo) return;
+
+                      excluir.mutate(
+                        { id: excluindo, paciente_id: pacienteId },
+                        {
+                          onSuccess: () => {
+                            queryClient.invalidateQueries({ queryKey: ['medicamentos', id] });
+                            setExcluindo(null);
+                          },
+                        }
+                      );
+                    }}
+                  >
+                    Excluir
+                  </AlertDialogAction>
+
+              
+             
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
