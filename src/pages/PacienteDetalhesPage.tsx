@@ -19,20 +19,30 @@ import {
 // --- FUNÇÕES AUXILIARES ---
 function estaVencido(dataValidade: string | null | undefined): boolean {
   if (!dataValidade) return false;
-  return new Date(dataValidade + 'T23:59:59') < new Date();
+  const data = new Date(dataValidade);
+  if (isNaN(data.getTime())) return false;
+  return data < new Date();
 }
 
 function consultaSocialVencida(dataProxima: string | null | undefined): boolean {
-  if (!dataProxima) return true; 
+  if (!dataProxima) return true;
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
-  return new Date(dataProxima + 'T00:00:00') <= hoje;
+  const data = new Date(dataProxima);
+  if (isNaN(data.getTime())) return true;
+  return data <= hoje;
 }
 
 function formatDate(d: string | null | undefined): string {
   if (!d) return '—';
-  return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
+
+  const date = new Date(d);
+
+  if (isNaN(date.getTime())) return '—';
+
+  return date.toLocaleDateString('pt-BR');
 }
+
 
 type OrdemListagem = 'alfabetica' | 'alfabetica_inversa';
 
