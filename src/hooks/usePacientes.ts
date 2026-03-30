@@ -6,6 +6,8 @@ export type Paciente = {
   nome: string;
   contato?: string;
   data_nascimento?: string;
+  ultima_consulta_social?: string;
+  proxima_consulta_social?: string;
 };
 
 const API_URL = "http://localhost:3000";
