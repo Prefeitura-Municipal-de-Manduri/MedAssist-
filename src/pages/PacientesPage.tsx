@@ -47,10 +47,17 @@ export default function PacientesPage() {
     }
   };
 
-  const formatDate = (d: string | null) => {
+
+  function formatDate(d: string | null | undefined): string {
     if (!d) return '—';
-    return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR');
-  };
+
+    const date = new Date(d);
+
+    if (isNaN(date.getTime())) return '—';
+
+    return date.toLocaleDateString('pt-BR');
+  }
+
 
   // 🔥 ORDENAÇÃO AQUI
   const pacientesOrdenados = useMemo(() => {
