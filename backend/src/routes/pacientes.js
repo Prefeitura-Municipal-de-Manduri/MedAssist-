@@ -3,7 +3,6 @@ import { pool } from '../db.js';
 
 const router = express.Router();
 
-// GET - Listar todos com busca opcional
 router.get('/', async (req, res) => {
   const { busca } = req.query;
   let query = 'SELECT * FROM pacientes ORDER BY nome';
