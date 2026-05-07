@@ -65,7 +65,7 @@ npm install
 Configure o arquivo .env:
 
 DB_HOST=localhost
-DB_PORT=5432
+DB_PORT=5431
 DB_USER=postgres
 DB_PASSWORD=sua_senha
 DB_NAME=medassist
